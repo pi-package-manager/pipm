@@ -11,19 +11,122 @@ Built with Bun and compiled to a standalone binary. MIT licensed. Auth,
 dependency resolution, path-safety, and the CLI structure are forked from OCX
 (MIT); the immutable vendoring build and git source support are new.
 
-## Install
+## Quick start
 
-Once a release is published, install the prebuilt binary from GitHub Releases:
+Install pipm, author a small registry in `/tmp`, build it, and install a profile into an isolated
+Pi home — without touching your real `~/.pi`.
+
+### 1. Install pipm
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/pi-package-manager/pipm/main/scripts/install.sh | sh
-# pin a version / dir:
-PIPM_VERSION=v0.0.1 PIPM_INSTALL=~/.local/bin curl -fsSL .../install.sh | sh
+# pin a version / install dir:  PIPM_VERSION=v0.0.1 PIPM_INSTALL=~/.local/bin curl -fsSL .../install.sh | sh
 ```
 
-The script detects your OS/arch (incl. Apple-Silicon Rosetta and musl/Alpine), downloads the
-matching `pipm-<os>-<arch>` asset from the release, verifies it against the release's `SHA256SUMS`,
-and installs it to `/usr/local/bin` (or `~/.local/bin`). Or build from source (below).
+The script detects your OS/arch (incl. Apple-Silicon Rosetta and musl/Alpine), downloads the matching
+`pipm-<os>-<arch>` asset from the latest GitHub Release, verifies it against `SHA256SUMS`, and installs
+to `/usr/local/bin` (or `~/.local/bin`). Prefer source? See [Build](#build).
+
+### 2. Create a registry in `/tmp`
+
+A registry is a `registry.jsonc` manifest plus a `files/` directory. This one defines a hello-world
+**skill**, the **`pi-subagents` plugin** (pinned to an explicit version), and an **`all` profile**
+that bundles both:
+
+```bash
+mkdir -p /tmp/my-registry/files/skills/hello /tmp/my-registry/files/profiles/all
+
+cat > /tmp/my-registry/registry.jsonc <<'EOF'
+{
+  "$schema": "https://pipm.dev/schemas/v1/registry.json",
+  "name": "demo",
+  "version": "1.0.0",
+  "author": "you@example.com",
+  "components": [
+    {
+      "name": "hello",
+      "type": "skill",
+      "description": "A hello-world skill",
+      "source": { "type": "static", "files": ["skills/hello/SKILL.md"] }
+    },
+    {
+      "name": "pi-subagents",
+      "type": "plugin",
+      "description": "Run subagents in Pi",
+      "vendorDeps": "bundle",
+      "source": { "type": "npm", "package": "pi-subagents", "version": "0.44.0" }
+    },
+    {
+      "name": "all",
+      "type": "profile",
+      "description": "Everything: hello skill + pi-subagents plugin",
+      "source": { "type": "static", "files": [{ "path": "profiles/all/AGENTS.md", "target": "AGENTS.md" }] },
+      "dependencies": ["hello", "pi-subagents"],
+      "pi": { "theme": "dark" }
+    }
+  ]
+}
+EOF
+
+cat > /tmp/my-registry/files/skills/hello/SKILL.md <<'EOF'
+---
+name: hello
+description: Say hello to the user. Use when the user greets you or asks for a greeting.
+---
+
+# Hello
+
+Greet the user warmly and offer to help.
+EOF
+
+cat > /tmp/my-registry/files/profiles/all/AGENTS.md <<'EOF'
+# all profile
+
+Installed by pipm. Bundles the hello skill and the pi-subagents plugin.
+EOF
+```
+
+> Pin the plugin to a specific version (`"version": "0.44.0"`). pipm records the exact version + a
+> per-file SHA-256 in the lockfile, so you always control which version installs, and when.
+
+### 3. Build the registry
+
+```bash
+pipm build /tmp/my-registry
+```
+
+This downloads and **vendors** everything — the `pi-subagents` tarball *and its full dependency tree*
+— into `/tmp/my-registry/registry/` (a self-contained, servable folder) and writes
+`/tmp/my-registry/pipm-lock.json` (pinned versions + hashes).
+
+### 4. Add the built registry to your machine
+
+```bash
+pipm registry add /tmp/my-registry/registry --name demo
+```
+
+(A local folder here; once you host `registry/` over HTTP you'd use its URL instead.)
+
+### 5. Install the `all` profile into an isolated Pi home
+
+Use `--pi-home /tmp/pi` so this never touches your existing `~/.pi`:
+
+```bash
+pipm --pi-home /tmp/pi install demo/all
+```
+
+It lands in `/tmp/pi/agent/`: `skills/hello/`, `npm/node_modules/pi-subagents` (plus its vendored
+deps), a `settings.json` (`packages: ["npm:pi-subagents"]`, `theme: dark`), and a
+`.pipm/receipt.jsonc`. No npm/git access happened at install time.
+
+### 6. Run Pi against it
+
+```bash
+PI_CODING_AGENT_DIR=/tmp/pi/agent pi
+```
+
+For your real setup, drop `--pi-home` and it installs into `~/.pi/agent` — Pi's default — so plain
+`pi` picks it up.
 
 ## Why
 A user that wants to have a single profile for their Pi that they can migrate
@@ -69,24 +172,23 @@ default — so plain `pi` picks it up. For any other home, point Pi at it:
 PI_CODING_AGENT_DIR=<pi-home>/agent pi
 ```
 
-## Usage
+## Commands
 
-```bash
-# Author a registry: registry.jsonc + files/  (see examples/registry-starter)
-pipm build ./my-registry --out ./my-registry/registry   # vendors + hashes + locks
-
-# Serve ./registry over any static HTTP host, or use the folder directly.
-pipm registry add ./my-registry/registry --name acme     # or an https:// URL
-pipm install acme/backend-dev                            # → ~/.pi/agent
-pipm add acme/some-skill                                 # add one component
-pipm list
-pipm verify                                              # SHA-256 integrity
-pipm remove some-skill
-
-# install into a different Pi home:
-pipm --pi-home /tmp/pi install acme/backend-dev          # → /tmp/pi/agent
-PI_CODING_AGENT_DIR=/tmp/pi/agent pi
 ```
+pipm init registry <path>          scaffold a new registry project
+pipm build [path]                  vendor npm/git/static → immutable registry/ + lockfile
+pipm registry add <url> --name <a> add a registry (https:// URL, file://, or local folder)
+pipm registry remove|list          manage configured registries
+pipm install <alias>/<profile>     install a profile into <pi-home>/agent (resolves deps)
+pipm add <alias>/<component>       add one component into <pi-home>/agent
+pipm remove <components...>        remove installed components
+pipm verify [components...]        SHA-256 integrity check against the receipt
+pipm list                          list installed components
+pipm search [query]                search across configured registries
+```
+
+Global flags: `--pi-home <path>` (default `~/.pi`; installs into `<pi-home>/agent`), `--json`,
+`--dry-run`, `-q/--quiet`, `-v/--verbose`.
 
 Private registries: `pipm registry add <url> --name acme --token-env ACME_TOKEN`
 (bearer/basic; env/file/literal credential sources, per-registry
