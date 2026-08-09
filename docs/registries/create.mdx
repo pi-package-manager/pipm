@@ -1,0 +1,121 @@
+---
+title: "Creating Registries"
+description: "How to author, build, and distribute an immutable pipm registry"
+---
+
+## Overview
+
+A pipm registry is a `registry.jsonc` manifest plus a `files/` directory. `pipm build` turns it into
+an immutable, self-contained `registry/` folder that you serve as static files. Unlike OCX, pipm
+**vendors** every source at build time — npm tarballs, git repos, and static files are all
+downloaded and pinned — so consumers install fully offline.
+
+> For the HTTP endpoints the built folder exposes, see the [Registry Protocol](/registries/protocol).
+
+## Quick start
+
+```bash
+pipm init registry ./my-registry --author "you@example.com"
+cd my-registry
+pipm build .
+```
+
+## Directory structure
+
+```
+my-registry/
+├── registry.jsonc     # the manifest you edit
+├── files/             # local content for `static` sources
+│   ├── skills/
+│   ├── extensions/
+│   ├── plugins/
+│   └── profiles/
+├── pipm-lock.json     # generated: pinned versions/SHAs + hashes
+└── registry/          # generated: immutable, servable
+```
+
+## The manifest (`registry.jsonc`)
+
+```jsonc
+{
+  "$schema": "https://pipm.dev/schemas/v1/registry.json",
+  "name": "acme",
+  "version": "1.0.0",
+  "author": "you@example.com",
+  "pi": ">=0.80.0",     // optional min Pi version
+  "pipm": ">=0.1.0",    // optional min pipm version
+  "components": [
+    { "name": "routines", "type": "skill",
+      "description": "Routines skill",
+      "source": { "type": "npm", "package": "@acme/routines", "version": "^1.4.0", "subpath": "skills/routines" } },
+
+    { "name": "tps", "type": "extension",
+      "description": "TPS widget",
+      "source": { "type": "git", "repo": "https://github.com/acme/pi-tps", "ref": "v2.1.0", "subpath": "extensions/tps" } },
+
+    { "name": "toolkit", "type": "plugin", "vendorDeps": "bundle",
+      "source": { "type": "npm", "package": "@acme/toolkit" } },
+
+    { "name": "backend-dev", "type": "profile",
+      "description": "common-base + routines + toolkit",
+      "source": { "type": "static", "files": [{ "path": "profiles/backend-dev/AGENTS.md", "target": "AGENTS.md" }] },
+      "dependencies": ["common-base", "routines", "toolkit"],
+      "pi": { "theme": "dark" } }
+  ]
+}
+```
+
+**Key fields**
+
+- `$schema` — `https://pipm.dev/schemas/v1/registry.json`.
+- `name`, `version` (semver), `author` — registry metadata.
+- `components[]` — each has `name`, `type` (`skill|extension|plugin|profile`), `description`, a
+  `source`, optional `dependencies`, optional `vendorDeps` (plugins), and an optional `pi` block
+  (profiles).
+
+See [Sources in detail](/concepts/sources) for every source field.
+
+## Component types
+
+| Type | Vendored layout | Installs into `<agent>/` |
+|------|-----------------|--------------------------|
+| `skill` | `skills/<name>/…` | `skills/<name>/` |
+| `extension` | loose `.ts` or a folder | `extensions/<name>.ts` or `extensions/<name>/` |
+| `plugin` | `node_modules/<pkg>/…` (+ deps in `bundle` mode) | `npm/node_modules/<pkg>/` + `settings.json` `packages` |
+| `profile` | its `AGENTS.md`/settings + deps | the agent dir itself |
+
+## Dependencies
+
+Bare names are same-registry; qualified `alias/name` are cross-registry (the consumer must have that
+alias configured).
+
+```jsonc
+{ "name": "researcher", "dependencies": ["utils", "acme/shared"] }
+```
+
+## Building
+
+```bash
+pipm build ./my-registry           # → registry/ + pipm-lock.json
+pipm build ./my-registry --out dist
+```
+
+`git`, `tar`, and `npm` must be on PATH when the registry vendors git or `bundle`-npm sources.
+
+## Distribution
+
+The `registry/` folder is static files — host it anywhere:
+
+- **Any HTTP server / GitHub Pages / Vercel / Netlify / Cloudflare** — serve the `registry/`
+  directory as static assets.
+- **A local folder or `file://` URL** — use it directly with `pipm registry add`.
+
+```bash
+pipm registry add https://acme.example.com/registry --name acme
+pipm install acme/backend-dev
+```
+
+## See also
+
+- [Registry protocol](/registries/protocol) · [Authentication](/registries/authentication) ·
+  [pipm build](/cli/build)

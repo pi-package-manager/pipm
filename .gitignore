@@ -1,0 +1,12 @@
+node_modules
+dist
+*.tsbuildinfo
+.DS_Store
+
+# secrets — never commit
+.env
+.env.*
+!.env.example
+
+# built registry output from examples
+examples/**/registry/

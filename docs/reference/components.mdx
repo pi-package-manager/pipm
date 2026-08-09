@@ -1,0 +1,78 @@
+---
+title: "Pi Resource Reference"
+description: "How Pi discovers and loads the skills, extensions, and plugins pipm installs"
+---
+
+pipm installs into `<pi-home>/agent`, the directory Pi loads (Pi's default is `~/.pi/agent`,
+overridable only via the `PI_CODING_AGENT_DIR` environment variable). This page summarizes the Pi
+resource shapes pipm targets.
+
+## Skills
+
+A skill is a folder containing a `SKILL.md` with YAML frontmatter:
+
+```markdown
+---
+name: hello
+description: Say hello to the user in a friendly way. Use when the user greets you.
+---
+
+# Hello Skill
+
+Instructions the model reads when the skill is invoked.
+```
+
+- `description` is **required**; `name` defaults to the folder name if omitted.
+- Pi auto-discovers skills under `<agent-dir>/skills/` and inside installed packages that declare a
+  `pi.skills` entry.
+- pipm installs a `skill` component to `skills/<name>/`.
+
+## Extensions
+
+An extension is TypeScript whose default export is a factory receiving Pi's extension API:
+
+```ts
+export default function myExtension(pi) {
+  pi.registerCommand("greet", {
+    description: "Greet the user",
+    handler: async () => { /* … */ },
+  })
+  pi.on("session_start", async (event, ctx) => { /* … */ })
+}
+```
+
+- It may be a single `.ts`/`.js` file, or a folder with an `index.ts` (or a `package.json` whose
+  `pi.extensions` lists entry files).
+- Pi auto-discovers extensions under `<agent-dir>/extensions/`.
+- pipm installs a single-file `extension` component to `extensions/<name>.ts`, and a folder
+  extension to `extensions/<name>/`.
+
+## Plugins
+
+A plugin is an npm-style package whose `package.json` declares Pi resources under a `pi` key:
+
+```json
+{
+  "name": "demo-plugin",
+  "type": "module",
+  "pi": { "extensions": ["./extensions/index.ts"], "skills": ["./skills"] }
+}
+```
+
+- pipm installs a `plugin` component into `<agent-dir>/npm/node_modules/<pkg>/` and adds
+  `"npm:<pkg>"` to `settings.json` `packages`. It also ensures `<agent-dir>/npm/package.json` exists.
+- Because the package (and, with `vendorDeps: "bundle"`, its full dependency tree) is pre-vendored,
+  Pi loads it **offline** — set `PI_OFFLINE=1` so Pi never attempts an npm install.
+
+## settings.json
+
+pipm writes/merges `<agent-dir>/settings.json`:
+
+```json
+{
+  "theme": "dark",
+  "packages": ["npm:demo-plugin"]
+}
+```
+
+`packages` lists the plugins Pi should load; scalar keys come from profile `pi` blocks.

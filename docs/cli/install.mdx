@@ -1,0 +1,69 @@
+---
+title: "pipm install / add / remove / verify"
+description: "Install profiles and components into the Pi agent directory, and manage them"
+---
+
+## `pipm install <alias>/<profile>`
+
+Installs a **profile** into `<pi-home>/agent`, resolving and flattening all dependencies. The target
+ref must be a `profile` component.
+
+```bash
+pipm install acme/backend-dev
+pipm --pi-home /tmp/pi install acme/backend-dev
+```
+
+| Option | Description |
+|--------|-------------|
+| `--from <url>` | Install from an ephemeral registry URL/path not persisted to `pipm.jsonc`. |
+
+Installing never contacts npm or git — the registry is pre-vendored. Files are fetched (from HTTP or
+a local folder), verified against their SHA-256 hashes, and written under `<pi-home>/agent`. After a
+successful install, pipm prints the exact command to run Pi against that home.
+
+## `pipm add <alias>/<component>`
+
+Adds a single component (skill, extension, or plugin) and its dependencies into `<pi-home>/agent`.
+
+```bash
+pipm add acme/lint-skill
+```
+
+## `pipm remove <components...>`
+
+Removes installed components: deletes their files (shared instruction files are left in place) and
+reverses the `settings.json` `packages` entries they added.
+
+```bash
+pipm remove lint-skill demo-plugin
+```
+
+## `pipm verify [components...]`
+
+Re-hashes installed files and compares them to the receipt. Exits non-zero if anything is modified or
+missing.
+
+```bash
+pipm verify
+pipm verify demo-plugin
+```
+
+## `pipm list`
+
+Lists components installed in `<pi-home>/agent`.
+
+## `pipm search [query]`
+
+Searches component names/descriptions across every configured registry's `index.json`.
+
+## Running Pi against the result
+
+```bash
+# default home → ~/.pi/agent → plain pi picks it up
+pi
+
+# any other home
+PI_CODING_AGENT_DIR=/tmp/pi/agent PI_OFFLINE=1 pi
+```
+
+`PI_OFFLINE=1` guarantees Pi loads the pre-vendored packages with no network access.

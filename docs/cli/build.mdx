@@ -1,0 +1,65 @@
+---
+title: "pipm build"
+description: "Build an immutable, servable registry folder from a registry.jsonc"
+---
+
+## Usage
+
+```bash
+pipm build [path] [--out <dir>]
+```
+
+`[path]` is the registry source directory (or a `registry.jsonc` file); it defaults to the current
+directory. Output defaults to `<source>/registry`.
+
+```bash
+pipm build ./my-registry
+pipm build ./my-registry --out ./dist
+```
+
+## What it does
+
+1. Validates `registry.jsonc` against the schema.
+2. Resolves the dependency graph (depth-first topological sort, cycle detection).
+3. **Vendors** every component's source:
+   - **npm** — downloads the tarball, verifies `dist.integrity` (SHA-512), extracts, copies the
+     requested files. Plugins with `vendorDeps: "bundle"` also vendor the full production
+     `node_modules` tree.
+   - **git** — clones at `ref`, pins the resolved commit SHA, copies the requested subpath.
+   - **static** — copies from the local `files/` directory.
+4. Hashes every vendored file (SHA-256) and computes a per-component `contentHash`.
+5. Emits the servable folder and a lockfile.
+
+## Output
+
+```
+<source>/
+├── pipm-lock.json                 # pinned versions/SHAs + per-file hashes (committed)
+└── registry/                      # immutable, servable over plain HTTP
+    ├── index.json
+    ├── pipm-lock.json
+    ├── .well-known/pipm.json
+    └── components/
+        ├── <name>.json            # packument (dist-tags.latest + versions)
+        └── <name>/…               # vendored files
+```
+
+## Requirements
+
+- `git` on PATH for git sources.
+- `tar` on PATH to extract npm tarballs.
+- `npm` on PATH for `vendorDeps: "bundle"` plugins.
+
+Static-only registries need none of these.
+
+## Options
+
+| Option | Description |
+|--------|-------------|
+| `--out <dir>` | Output directory (default `<source>/registry`). |
+| `--dry-run` | List what would be vendored without writing. |
+| `--timestamp <iso>` | Override the lockfile `generatedAt` stamp. |
+
+## See also
+
+- [Registry protocol](/registries/protocol) · [Verification](/security/verification)

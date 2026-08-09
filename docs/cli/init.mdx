@@ -1,0 +1,46 @@
+---
+title: "pipm init"
+description: "Initialize a Pi home, or scaffold a new registry project"
+---
+
+## `pipm init`
+
+Creates the Pi home skeleton (`<pi-home>/agent`) and writes a `pipm.jsonc` if one doesn't exist.
+
+```bash
+pipm init
+pipm --pi-home /tmp/pi init
+```
+
+## `pipm init registry <path>`
+
+Scaffolds a new registry project at `<path>` from a template baked into the binary — no network
+fetch. Refuses to overwrite an existing `registry.jsonc`.
+
+```bash
+pipm init registry ./my-registry --name my-registry --author "you@example.com"
+```
+
+| Option | Description |
+|--------|-------------|
+| `--name <name>` | Registry name (default: the directory's basename). Lowercase alphanumerics with single hyphens. |
+| `--author <author>` | Author for the manifest (default: `you@example.com`). |
+
+The scaffold contains:
+
+```
+my-registry/
+├── registry.jsonc
+└── files/
+    ├── skills/hello/SKILL.md
+    ├── extensions/greet.ts
+    └── profiles/starter/AGENTS.md
+```
+
+…and a `starter` profile that depends on the `hello` skill and `greet` extension, so you can build
+and install it immediately.
+
+## See also
+
+- [Creating registries](/registries/create)
+- [pipm build](/cli/build)

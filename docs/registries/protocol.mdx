@@ -1,0 +1,127 @@
+---
+title: "Registry Protocol"
+description: "The static HTTP layout a pipm registry serves"
+---
+
+## Overview
+
+A built pipm registry is a set of static files. A host only needs to serve them over HTTP (or you
+can point pipm at a local folder / `file://` URL). Every file is already vendored and hashed at
+build time.
+
+> **Private registries:** when credentials are configured for a registry, pipm attaches them (e.g. an
+> `Authorization` header) to **every** request below — index, packument, and file endpoints alike.
+> See [Registry Authentication](/registries/authentication).
+
+## Endpoints
+
+### Registry index
+
+```
+GET /index.json
+```
+
+```json
+{
+  "$schema": "https://pipm.dev/schemas/v1/registry.json",
+  "name": "acme",
+  "version": "1.0.0",
+  "author": "you@example.com",
+  "components": [
+    { "name": "hello", "type": "skill", "description": "A friendly hello skill" }
+  ]
+}
+```
+
+`pipm registry add` validates a registry by fetching `<url>/index.json`.
+
+### Component packument
+
+```
+GET /components/{name}.json
+```
+
+npm-style packument. Each version manifest carries the resolved source pins, the per-file install
+targets and hashes, and the component `contentHash`:
+
+```json
+{
+  "name": "hello",
+  "dist-tags": { "latest": "1.0.0" },
+  "versions": {
+    "1.0.0": {
+      "name": "hello",
+      "type": "skill",
+      "description": "A friendly hello skill",
+      "resolved": { "type": "static" },
+      "contentHash": "sha256:…",
+      "files": [
+        { "path": "SKILL.md", "target": "skills/hello/SKILL.md", "sha256": "…", "size": 220 }
+      ],
+      "dependencies": []
+    }
+  }
+}
+```
+
+- `path` — location under `components/{name}/`.
+- `target` — install destination relative to `<pi-home>/agent`.
+- `sha256`, `size` — verified by the consumer before writing.
+
+### File content
+
+```
+GET /components/{name}/{path}
+```
+
+Raw bytes of a vendored file.
+
+### Discovery
+
+```
+GET /.well-known/pipm.json
+→ { "registry": "/index.json", "lockfile": "/pipm-lock.json" }
+```
+
+### Lockfile
+
+```
+GET /pipm-lock.json
+```
+
+The immutability record — resolved npm versions + integrity, git commit SHAs, and per-file hashes.
+
+## Blocked target paths
+
+Registry components may not install to these paths (the CLI rejects them at build and install time):
+
+- `.pipm/` — receipt/state
+- `pipm.jsonc` — config
+- `settings.json`, `npm/package.json` — managed by pipm's settings/merge step
+- `memory/`, `sessions/` — Pi runtime dirs
+- `.git/`, `.env` — VCS internals and secrets
+
+`node_modules/` is permitted **only** for `plugin` components (that's where their tree lands). In
+addition, absolute paths, drive letters, `../` traversal, and null bytes are always rejected.
+
+## Minimal registry
+
+```
+/index.json
+/components/hello.json
+/components/hello/SKILL.md
+/pipm-lock.json
+/.well-known/pipm.json
+```
+
+## Hosting
+
+| Platform | Approach |
+|----------|----------|
+| Any HTTP server | Serve the built `registry/` directory as static files |
+| GitHub Pages / Vercel / Netlify / Cloudflare | Pre-build with `pipm build`, publish `registry/` |
+| Local | `pipm registry add ./path/to/registry --name …` (folder or `file://`) |
+
+## See also
+
+- [Creating registries](/registries/create) · [Verification](/security/verification)

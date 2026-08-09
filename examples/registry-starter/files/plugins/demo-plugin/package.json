@@ -1,0 +1,15 @@
+{
+	"name": "demo-plugin",
+	"version": "1.0.0",
+	"type": "module",
+	"private": true,
+	"description": "A demo Pi plugin installed by pipm",
+	"pi": {
+		"extensions": [
+			"./extensions/index.ts"
+		],
+		"skills": [
+			"./skills"
+		]
+	}
+}

@@ -1,0 +1,55 @@
+---
+title: "Profiles"
+description: "How pipm profiles are defined, flattened, and installed into the Pi agent directory"
+---
+
+## What a profile is
+
+A **profile** is an installable bundle — a curated set of skills, extensions, plugins (and other
+profiles) plus a Pi `settings.json` and instruction files. It is a component of `type: "profile"`.
+
+```jsonc
+{
+  "name": "backend-dev",
+  "type": "profile",
+  "description": "common-base + routines + toolkit",
+  "source": { "type": "static", "files": [{ "path": "profiles/backend-dev/AGENTS.md", "target": "AGENTS.md" }] },
+  "dependencies": ["common-base", "routines", "toolkit"],
+  "pi": { "theme": "dark", "packages": [] }
+}
+```
+
+The `pi` block becomes the base of the installed `settings.json`. `pipm build` auto-fills
+`packages` from any plugin the profile pulls in, so you don't list them by hand.
+
+## Where a profile installs
+
+pipm **owns the whole Pi agent directory**. Installing a profile writes into `<pi-home>/agent` —
+the exact directory Pi loads. It does **not** create `profiles/<name>` sub-directories (that is a
+convention of the separate `piw` wrapper; pipm deliberately does not mirror it).
+
+- Default Pi home is `~/.pi`, so a default install populates `~/.pi/agent` and plain `pi` uses it.
+- For any other home, pass `--pi-home <path>` and run Pi with
+  `PI_CODING_AGENT_DIR=<path>/agent pi`.
+
+## Profile-to-profile dependencies (inline-flatten)
+
+A profile may depend on other profiles. pipm **inline-flattens** them: installing one profile copies
+the union of all resolved skills/extensions/plugins from it and every profile it depends on into the
+one agent directory.
+
+- pipm does **not** write Pi `extends` entries — Pi core has no profile-inheritance system, so a
+  flattened profile runs on plain Pi.
+- Instruction files (`AGENTS.md`, `APPEND_SYSTEM.md`) contributed by multiple profiles are
+  **concatenated** in dependency order (dependencies first, the installed profile last).
+- Scalar `settings.json` keys (e.g. `theme`) merge, with the installed profile winning;
+  `packages` are unioned.
+
+## `install` vs `add`
+
+- `pipm install <alias>/<profile>` requires a `profile` component and provisions the agent dir from
+  it, flattening all dependencies.
+- `pipm add <alias>/<component>` layers any single component (and its dependencies) into the agent
+  dir — useful for adding one skill or plugin on top of an existing setup.
+
+Both write to `<pi-home>/agent` and record a receipt at `<pi-home>/agent/.pipm/receipt.jsonc`.

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://pipm.dev/schemas/v1/registry.json",
+  "name": "registry",
+  "version": "1.0.0",
+  "author": "you@example.com",
+  "pi": ">=0.80.0",
+  "pipm": ">=0.1.0",
+  "components": [
+    {
+      "name": "hello",
+      "type": "skill",
+      "description": "A friendly hello-world skill"
+    },
+    {
+      "name": "greet",
+      "type": "extension",
+      "description": "A tiny greeting extension"
+    },
+    {
+      "name": "starter",
+      "type": "profile",
+      "description": "Starter profile = hello skill + greet extension"
+    },
+    {
+      "name": "pi-mcp-extension",
+      "type": "plugin",
+      "description": "MCP client extension for Pi (from npm)"
+    },
+    {
+      "name": "common",
+      "type": "profile",
+      "description": "Common profile — bundles the pi-mcp-extension plugin"
+    }
+  ]
+}

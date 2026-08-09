@@ -1,0 +1,96 @@
+{
+  "lockfileVersion": 1,
+  "registry": {
+    "name": "pipm-example",
+    "version": "1.0.0"
+  },
+  "pipm": "0.1.0-dev",
+  "generatedAt": "2026-08-08T16:03:50.766Z",
+  "components": {
+    "hello": {
+      "type": "skill",
+      "source": {
+        "type": "static"
+      },
+      "contentHash": "sha256:c7c09ecff3d1922db76f5ccdb1d28cb1d2aaf39b10c8c96108c45d64864357b1",
+      "files": {
+        "SKILL.md": {
+          "sha256": "5160498842372989cf2a58a13c2a1a1d62d5a9578674a875973c8078a9f22e96",
+          "size": 198
+        }
+      },
+      "dependencies": []
+    },
+    "greet": {
+      "type": "extension",
+      "source": {
+        "type": "static"
+      },
+      "contentHash": "sha256:d7dee8ac1d6ec849bbdc919ceba252eb48a5a1c4b6218a92058b7bfbac208f6b",
+      "files": {
+        "greet.ts": {
+          "sha256": "0ecddd9a24aa9d96f9b806e06c5ba7fd98cacb665474196ef288eaa3d02dc4a1",
+          "size": 1142
+        }
+      },
+      "dependencies": []
+    },
+    "demo-plugin": {
+      "type": "plugin",
+      "source": {
+        "type": "static"
+      },
+      "contentHash": "sha256:27b349b7bfda79be70b78efa1413491cc6346a2f807324a540a4a964cacd631c",
+      "files": {
+        "node_modules/demo-plugin/extensions/index.ts": {
+          "sha256": "bd387609f3a63b58b05f3520c58151d910856b40174b62c43b9cf8bc4f934a5d",
+          "size": 539
+        },
+        "node_modules/demo-plugin/package.json": {
+          "sha256": "893e862f30293987f5c31dad8788449ed40cc5e3526994e8e2f96cab90d8f34b",
+          "size": 220
+        },
+        "node_modules/demo-plugin/skills/plugin-skill/SKILL.md": {
+          "sha256": "ccbb2753dd5072f709ff83e9f927498948824c44b08c02644028e1d8b1876781",
+          "size": 205
+        }
+      },
+      "vendorDeps": "defer",
+      "dependencies": [],
+      "primaryPackage": "demo-plugin"
+    },
+    "common-base": {
+      "type": "profile",
+      "source": {
+        "type": "static"
+      },
+      "contentHash": "sha256:41b576979f28adf40a60e14f392ff34eb45ec61daf44115bb5b0ef6d1ed0e005",
+      "files": {
+        "AGENTS.md": {
+          "sha256": "e014334af01d880ada12e8a3a6e56b5b53a6286b799f08087e2a4ce6240bbec9",
+          "size": 136
+        }
+      },
+      "dependencies": []
+    },
+    "demo": {
+      "type": "profile",
+      "source": {
+        "type": "static"
+      },
+      "contentHash": "sha256:2edd89d80acbed763ab65bda3e08e4265eb8aee663261bdc9a5db6d4198ce537",
+      "files": {
+        "AGENTS.md": {
+          "sha256": "c308af069eebde76b4759791a6104e9b73d4846c44f34f6b991842a93056c839",
+          "size": 163
+        }
+      },
+      "dependencies": [
+        "common-base",
+        "hello",
+        "greet",
+        "demo-plugin"
+      ]
+    }
+  }
+}

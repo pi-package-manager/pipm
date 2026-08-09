@@ -1,0 +1,53 @@
+---
+title: "Immutability & Verification"
+description: "How pipm pins, hashes, and verifies registry content end to end"
+---
+
+## The chain of trust
+
+pipm makes a registry reproducible and tamper-evident from build to install:
+
+1. **Pin on build.** Floating inputs become exact pins:
+   - npm ranges → an exact version plus `dist.integrity` (SHA-512), verified before extraction.
+   - git refs → a resolved 40-character commit SHA.
+2. **Hash everything.** Every vendored file gets a SHA-256; every component gets a Merkle-style
+   `contentHash` over its sorted `path:sha256` lines. Both are stored in the packument and the
+   lockfile.
+3. **Lock.** `pipm-lock.json` records the registry name/version, every component's resolved source,
+   `contentHash`, and per-file `{sha256, size}`.
+4. **Verify on install.** Before writing any file, the consumer re-hashes the fetched bytes and
+   compares them to the packument's `sha256`. A mismatch aborts with an integrity error — so a
+   compromised HTTP mirror cannot inject altered content.
+5. **Receipt.** Installed files are recorded in `<pi-home>/agent/.pipm/receipt.jsonc`, keyed by a
+   canonical id `registryUrl::alias/name@sha256:<hash>`, with each file's hash.
+
+## `pipm verify`
+
+Re-hashes installed files against the receipt and reports drift:
+
+```bash
+pipm verify            # all components
+pipm verify demo-plugin
+```
+
+Exit code is non-zero if any file is modified or missing. Concatenated instruction files
+(`AGENTS.md`) are checked for presence rather than exact hash, since several components may
+contribute to them.
+
+## Atomic installs
+
+Installs are transactional: pipm computes all planned writes, detects intra-batch target collisions,
+backs up any file it overwrites, and rolls back every change if a later step fails — so a failed
+install never leaves a half-written agent directory.
+
+## Path safety
+
+Registry content can only write to safe, relative targets inside the agent directory. Absolute
+paths, drive letters, `../` traversal, and null bytes are rejected, and a set of protected paths
+(`.pipm/`, `pipm.jsonc`, `settings.json`, `npm/package.json`, `memory/`, `sessions/`, `.git/`,
+`.env`) can never be targeted by registry files. See [Registry Protocol](/registries/protocol#blocked-target-paths).
+
+## Offline guarantee
+
+Because `pipm build` vendors every byte, installing never contacts npm or git. Run Pi with
+`PI_OFFLINE=1` and it loads the pre-vendored packages with no network access at all.

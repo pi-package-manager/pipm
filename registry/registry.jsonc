@@ -1,0 +1,55 @@
+{
+	// A pipm registry: edit this manifest, put content under files/, then run
+	//   pipm build .
+	"$schema": "https://pipm.dev/schemas/v1/registry.json",
+	"name": "registry",
+	"version": "1.0.0",
+	"author": "you@example.com",
+	"pi": ">=0.80.0",
+	"pipm": ">=0.1.0",
+	"components": [
+		{
+			"name": "hello",
+			"type": "skill",
+			"description": "A friendly hello-world skill",
+			"source": { "type": "static", "files": ["skills/hello/SKILL.md"] }
+		},
+		{
+			"name": "greet",
+			"type": "extension",
+			"description": "A tiny greeting extension",
+			"source": { "type": "static", "files": ["extensions/greet.ts"] }
+		},
+		{
+			"name": "starter",
+			"type": "profile",
+			"description": "Starter profile = hello skill + greet extension",
+			"source": {
+				"type": "static",
+				"files": [{ "path": "profiles/starter/AGENTS.md", "target": "AGENTS.md" }]
+			},
+			"dependencies": ["hello", "greet"],
+			"pi": { "theme": "dark" }
+		},
+		{
+			// An npm-sourced Pi plugin. `bundle` vendors its full production
+			// node_modules (@modelcontextprotocol/sdk, zod) so installs are offline.
+			"name": "pi-mcp-extension",
+			"type": "plugin",
+			"description": "MCP client extension for Pi (from npm)",
+			"vendorDeps": "bundle",
+			"source": { "type": "npm", "package": "pi-mcp-extension", "version": "^1.5.0" }
+		},
+		{
+			"name": "common",
+			"type": "profile",
+			"description": "Common profile — bundles the pi-mcp-extension plugin",
+			"source": {
+				"type": "static",
+				"files": [{ "path": "profiles/common/AGENTS.md", "target": "AGENTS.md" }]
+			},
+			"dependencies": ["pi-mcp-extension"],
+			"pi": { "theme": "dark" }
+		}
+	]
+}

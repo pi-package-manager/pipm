@@ -1,0 +1,26 @@
+{
+  "name": "hello",
+  "dist-tags": {
+    "latest": "1.0.0"
+  },
+  "versions": {
+    "1.0.0": {
+      "name": "hello",
+      "type": "skill",
+      "description": "A friendly hello-world skill",
+      "resolved": {
+        "type": "static"
+      },
+      "contentHash": "sha256:9fb09be67ce450a56b995c72c4173a6d5671b75ccb86282e20524e0bab4e0c4d",
+      "files": [
+        {
+          "path": "SKILL.md",
+          "target": "skills/hello/SKILL.md",
+          "sha256": "a105d9c692f3b89ca6dab098a02491ea7ab73bca37711cbf746d443f3b007cdf",
+          "size": 175
+        }
+      ],
+      "dependencies": []
+    }
+  }
+}

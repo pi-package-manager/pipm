@@ -1,0 +1,85 @@
+---
+title: "Sources in Detail"
+description: "The npm, git, and static source types and their fields"
+---
+
+Each component's `source` is a discriminated union on `type`. A Cargo-style string shorthand is also
+accepted (`"npm:pkg@1.2.3"`, or a bare git URL).
+
+## npm
+
+```jsonc
+{
+  "source": {
+    "type": "npm",
+    "package": "@acme/routines",
+    "version": "^1.4.0",        // optional range; build pins the exact version
+    "subpath": "skills/routines", // optional dir/file inside the package to vendor
+    "include": ["**/*.md"]       // optional glob filter
+  }
+}
+```
+
+- For `skill`/`extension` components, pipm downloads the tarball, verifies `dist.integrity`, extracts
+  it, and copies `subpath`/`include`.
+- For `plugin` components, see `vendorDeps` below.
+
+Shorthand: `"source": "npm:@acme/routines@1.4.0"`.
+
+## git
+
+```jsonc
+{
+  "source": {
+    "type": "git",
+    "repo": "https://github.com/acme/pi-tps",
+    "ref": "v2.1.0",             // optional branch/tag/commit; pinned to a SHA at build
+    "subpath": "extensions/tps", // optional dir/file inside the repo
+    "include": ["**/*.ts"]       // optional glob filter
+  }
+}
+```
+
+pipm clones at `ref`, records the resolved commit SHA in the lockfile, copies `subpath`, and drops
+the `.git` directory. Requires `git` on PATH at build time.
+
+Shorthand: `"source": "https://github.com/acme/pi-tps"`.
+
+## static
+
+```jsonc
+{
+  "source": {
+    "type": "static",
+    "files": [
+      "skills/hello/SKILL.md",                                   // string: target defaults to basename
+      { "path": "profiles/common/AGENTS.md", "target": "AGENTS.md" } // object: explicit target
+    ]
+  }
+}
+```
+
+Files are read from the registry's `files/` directory. For a string entry the install target
+defaults to the file's basename; use the object form for an explicit target (relative to the
+component's install root).
+
+## `vendorDeps` (plugins)
+
+Plugins carry a Node dependency tree. Control how much is vendored:
+
+- `"vendorDeps": "bundle"` (default) — run the package's install and vendor its **entire production
+  `node_modules`**, so the plugin loads fully offline. Requires `npm` at build time.
+- `"vendorDeps": "defer"` — vendor only the package itself. Smaller registry; Pi resolves the
+  package's own dependencies at first run (needs network then).
+
+## Per-kind vendoring layout
+
+The vendored bytes are laid out so the install target is a simple transform of each file's path:
+
+- **skill** → files land under `skills/<name>/…`.
+- **extension** → a single loose code file becomes `extensions/<name>.ts`; a folder becomes
+  `extensions/<name>/…` (it must contain `index.ts` or a `package.json` with `pi.extensions`).
+- **plugin** → files land under `npm/node_modules/…`; the primary package name is recorded for the
+  `settings.json` `packages` entry (`npm:<pkg>`).
+- **profile** → files land at the agent-dir root (e.g. `AGENTS.md`), and the `pi` block seeds
+  `settings.json`.

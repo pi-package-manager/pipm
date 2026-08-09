@@ -1,0 +1,53 @@
+---
+title: "Introduction"
+description: "pipm brings curated Pi setups anywhere — immutable, self-contained registries of skills, extensions, plugins, and profiles"
+---
+
+## Overview
+
+pipm (Pi Package Manager) is a registry and package manager for [Pi](https://pi.dev). You define
+skills, extensions, plugins, and **profiles** in a `registry.jsonc`; pipm downloads and **vendors**
+everything into a self-contained, content-hashed `registry/` folder; then it copies those files
+straight into a Pi home — with no npm or git access needed at install time.
+
+## Why pipm?
+
+- **Immutable & self-contained** — `pipm build` vendors every source (npm tarballs, git repos, static
+  files) into a folder, pinned by SHA. Define a package once; the exact bytes travel with the registry.
+- **Offline installs** — Consumers never hit npm or git. Installing is a pure file copy verified
+  against SHA-256 hashes. Pi loads the result with `PI_OFFLINE=1`.
+- **Profiles** — Curate a named bundle of skills/extensions/plugins (and other profiles) and install
+  it into a Pi home in one command.
+- **Auditable** — A lockfile pins npm versions and git commit SHAs; every file is hashed; a receipt
+  records exactly what was installed.
+
+## Philosophy
+
+pipm is a fork of [OCX](https://github.com/kdcokenny/ocx) (MIT), retargeted from OpenCode to Pi. It
+keeps OCX's Cargo + shadcn model — components are copied into the target, not hidden in
+`node_modules`; dependencies are resolved and integrity-verified — and adds two things OCX doesn't:
+an **immutable vendoring build** (download once, copy forever) and **git sources**.
+
+## How it works
+
+1. **Author** a registry: a `registry.jsonc` manifest plus a `files/` directory
+   (`pipm init registry ./my-registry`).
+2. **Build** it: `pipm build ./my-registry` vendors every source into an immutable `registry/` folder
+   and writes `pipm-lock.json`.
+3. **Serve** the folder over any static HTTP host (or use it directly from disk).
+4. **Install**: `pipm registry add <url> --name acme` then `pipm install acme/<profile>` copies the
+   vendored files into `<pi-home>/agent`.
+5. **Run Pi** — with the default Pi home (`~/.pi`) the files land in `~/.pi/agent`, so plain `pi` picks
+   them up.
+
+## Next steps
+
+- [Install pipm](/getting-started/installation)
+- [Follow the Quick Start](/getting-started/quick-start)
+- [Understand sources & components](/concepts/overview)
+- [Build your own registry](/registries/create)
+
+## Disclaimer
+
+pipm is not built by the Pi team and is not affiliated with Pi. It is an independent, MIT-licensed
+tool that installs into Pi's configuration directory.

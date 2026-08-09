@@ -1,0 +1,57 @@
+---
+title: "Sources & Components"
+description: "The building blocks of a pipm registry: component kinds and their sources"
+---
+
+## Component kinds
+
+A registry defines **components**. Each has a `type` (kind) that determines where it installs inside
+the Pi agent directory and how Pi loads it:
+
+| Kind | Installs into `<pi-home>/agent/` as | Pi loads it via |
+|------|-------------------------------------|-----------------|
+| `skill` | `skills/<name>/SKILL.md` (+ assets) | `<agent-dir>/skills` auto-discovery |
+| `extension` | `extensions/<name>.ts` or `extensions/<name>/` | `<agent-dir>/extensions` auto-discovery |
+| `plugin` | `npm/node_modules/<pkg>/…` + a `settings.json` `packages` entry | pre-vendored npm package |
+| `profile` | its `AGENTS.md`/`settings.json` plus every dependency, flattened | it materializes the agent dir |
+
+## Sources
+
+Every component declares a **`source`** with a discriminator — where its bytes come from at
+**build** time. After building, the source no longer matters: everything is vendored into the
+registry.
+
+| Source | Vendored by `pipm build` |
+|--------|--------------------------|
+| `npm` | downloads the package tarball (integrity-verified), extracts, and copies the requested `subpath`/`include`. For plugins, `vendorDeps: "bundle"` installs and vendors the full production `node_modules` tree. |
+| `git` | clones the repo at `ref`, pins the resolved commit SHA, and copies the requested `subpath`. |
+| `static` | copies files from the registry's local `files/` directory. |
+
+See [Sources in detail](/concepts/sources) for the exact schema of each.
+
+## Dependencies
+
+Components declare `dependencies` as Cargo-style refs:
+
+- A **bare name** (`"utils"`) → a component in the **same** registry.
+- A **qualified name** (`"acme/utils"`) → a component in another configured registry.
+
+Dependencies are resolved with a depth-first topological sort and cycle detection, so a component's
+dependencies are always installed before it.
+
+## Immutability
+
+`pipm build` turns floating inputs into pinned, hashed artifacts:
+
+- npm ranges → an exact version + `dist.integrity` (SHA-512, verified before extraction).
+- git refs → a 40-character commit SHA.
+- every vendored file → a SHA-256; every component → a Merkle-style `contentHash`.
+
+All of this is recorded in `pipm-lock.json`. Consumers re-check file hashes before copying, so a
+tampered mirror is caught. See [Verification](/security/verification).
+
+## Next steps
+
+- [Sources in detail](/concepts/sources)
+- [Profiles](/concepts/profiles)
+- [Creating registries](/registries/create)

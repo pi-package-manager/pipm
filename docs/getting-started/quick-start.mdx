@@ -1,0 +1,77 @@
+---
+title: "Quick Start"
+description: "Scaffold a registry, build it, and install a profile into Pi"
+---
+
+## 1. Scaffold a registry
+
+```bash
+pipm init registry ./my-registry --author "you@example.com"
+```
+
+This writes a ready-to-build starter: a `registry.jsonc` and a `files/` directory containing an
+example skill, extension, and a `starter` profile that depends on both.
+
+## 2. Build it
+
+```bash
+pipm build ./my-registry
+```
+
+`pipm build` vendors every component's source into an immutable, servable `./my-registry/registry/`
+folder and writes `./my-registry/pipm-lock.json` (pinned versions + SHAs).
+
+## 3. Add the registry
+
+Use the built folder directly, or serve it over HTTP and use its URL:
+
+```bash
+pipm registry add ./my-registry/registry --name mine     # local folder / file:// / https://
+```
+
+## 4. Install a profile
+
+```bash
+pipm install mine/starter
+```
+
+Everything lands in `<pi-home>/agent` (default `~/.pi/agent`):
+
+```
+~/.pi/agent/
+├── skills/hello/SKILL.md
+├── extensions/greet.ts
+├── settings.json          # packages + theme
+├── AGENTS.md              # concatenated from the profile + its deps
+└── .pipm/receipt.jsonc    # what pipm installed, with per-file hashes
+```
+
+## 5. Run Pi
+
+With the default home, plain `pi` picks it up:
+
+```bash
+pi
+```
+
+For a non-default home, point Pi at the agent dir:
+
+```bash
+pipm --pi-home /tmp/pi install mine/starter
+PI_CODING_AGENT_DIR=/tmp/pi/agent pi
+```
+
+## Manage what's installed
+
+```bash
+pipm list             # components in <pi-home>/agent
+pipm verify           # SHA-256 integrity check against the receipt
+pipm add mine/hello   # add a single component
+pipm remove hello     # remove it again
+```
+
+## Next steps
+
+- [Concepts: sources & components](/concepts/overview)
+- [Creating registries](/registries/create)
+- [Registry authentication](/registries/authentication)

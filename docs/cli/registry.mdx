@@ -1,0 +1,58 @@
+---
+title: "pipm registry"
+description: "Add, remove, and list registries"
+---
+
+## `pipm registry add <url> --name <alias>`
+
+Adds a registry to `<pi-home>/pipm.jsonc`. The `<url>` may be an `https://` URL, a `file://` URL, or
+a local folder path. By default pipm validates the registry by fetching `<url>/index.json` (with any
+credentials you provide).
+
+```bash
+pipm registry add https://reg.example.com --name acme
+pipm registry add ./my-registry/registry --name mine
+```
+
+| Option | Description |
+|--------|-------------|
+| `--name <alias>` | Required. The alias you reference components by (`alias/component`). |
+| `--skip-validate` | Skip the `index.json` fetch. |
+| Auth flags | See [Authentication](/registries/authentication). |
+
+### Authentication flags
+
+| Flag | Written as |
+|------|-----------|
+| `--token <token>` | `{ "type": "bearer", "token": … }` |
+| `--token-env <NAME>` | `{ "type": "bearer", "tokenEnv": … }` |
+| `--token-file <path>` | `{ "type": "bearer", "tokenFile": … }` |
+| `--username <u> --password <p>` | `{ "type": "basic", "username": …, "password": … }` |
+| `--username <u> --password-env <NAME>` | `{ …, "passwordEnv": … }` |
+| `--username <u> --password-file <path>` | `{ …, "passwordFile": … }` |
+| `--insecure-skip-tls-verify` | Stores `"insecure": true` (skip TLS verification). |
+
+```bash
+# bearer, persisted as an env reference (secret stays out of pipm.jsonc)
+pipm registry add https://reg.acme.com --name acme --token-env ACME_TOKEN
+
+# basic, literal
+pipm registry add https://reg.acme.com --name acme --username ci --password s3cret
+```
+
+## `pipm registry remove <alias>`
+
+```bash
+pipm registry remove acme
+```
+
+## `pipm registry list`
+
+```bash
+pipm registry list
+```
+
+## See also
+
+- [Registry authentication](/registries/authentication)
+- [pipm install](/cli/install)

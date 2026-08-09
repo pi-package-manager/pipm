@@ -1,0 +1,31 @@
+{
+  "name": "common",
+  "dist-tags": {
+    "latest": "1.0.0"
+  },
+  "versions": {
+    "1.0.0": {
+      "name": "common",
+      "type": "profile",
+      "description": "Common profile — bundles the pi-mcp-extension plugin",
+      "resolved": {
+        "type": "static"
+      },
+      "contentHash": "sha256:d8940c552953e04c4eeadc66caa4d617503043038eb838a5e25d81cc46d42a7b",
+      "files": [
+        {
+          "path": "AGENTS.md",
+          "target": "AGENTS.md",
+          "sha256": "5fdbe1e5027fda8d05f249043e82eacc3559584f6ee201666765eb1f4cf9b5d5",
+          "size": 156
+        }
+      ],
+      "dependencies": [
+        "pi-mcp-extension"
+      ],
+      "pi": {
+        "theme": "dark"
+      }
+    }
+  }
+}

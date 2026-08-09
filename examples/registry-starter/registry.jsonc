@@ -1,0 +1,62 @@
+{
+	// pipm example registry: one skill, one extension, one plugin, and a profile
+	// (`demo`) that depends on all three plus another profile (`common-base`).
+	"$schema": "https://pipm.dev/schemas/v1/registry.json",
+	"name": "pipm-example",
+	"version": "1.0.0",
+	"author": "jsuchy@haproxy.com",
+	"pi": ">=0.80.0",
+	"pipm": ">=0.1.0",
+	"components": [
+		{
+			"name": "hello",
+			"type": "skill",
+			"description": "A friendly hello-world skill",
+			"source": { "type": "static", "files": ["skills/hello/SKILL.md"] }
+		},
+		{
+			"name": "greet",
+			"type": "extension",
+			"description": "A tiny greeting extension",
+			"source": { "type": "static", "files": ["extensions/greet.ts"] }
+		},
+		{
+			"name": "demo-plugin",
+			"type": "plugin",
+			"description": "A demo Pi plugin package (ships an extension and a skill)",
+			"vendorDeps": "defer",
+			"source": {
+				"type": "static",
+				"files": [
+					{ "path": "plugins/demo-plugin/package.json", "target": "package.json" },
+					{ "path": "plugins/demo-plugin/extensions/index.ts", "target": "extensions/index.ts" },
+					{
+						"path": "plugins/demo-plugin/skills/plugin-skill/SKILL.md",
+						"target": "skills/plugin-skill/SKILL.md"
+					}
+				]
+			}
+		},
+		{
+			"name": "common-base",
+			"type": "profile",
+			"description": "Shared base profile",
+			"source": {
+				"type": "static",
+				"files": [{ "path": "profiles/common-base/AGENTS.md", "target": "AGENTS.md" }]
+			},
+			"pi": { "theme": "dark" }
+		},
+		{
+			"name": "demo",
+			"type": "profile",
+			"description": "Demo profile = common-base + hello + greet + demo-plugin",
+			"source": {
+				"type": "static",
+				"files": [{ "path": "profiles/demo/AGENTS.md", "target": "AGENTS.md" }]
+			},
+			"dependencies": ["common-base", "hello", "greet", "demo-plugin"],
+			"pi": { "theme": "dark" }
+		}
+	]
+}

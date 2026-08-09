@@ -1,0 +1,81 @@
+---
+title: "Installation"
+description: "Build and install the pipm binary"
+---
+
+## Prebuilt binary (install script)
+
+Once a release is published to GitHub, install with one command — it detects your OS/arch
+(including Apple-Silicon Rosetta and musl/Alpine), downloads the matching `pipm-<os>-<arch>` asset,
+verifies it against the release's `SHA256SUMS`, and installs to `/usr/local/bin` (or `~/.local/bin`):
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/<owner>/pipm/main/scripts/install.sh | sh
+
+# pin a version or install dir:
+PIPM_VERSION=v0.0.1 PIPM_INSTALL=~/.local/bin \
+  curl -fsSL https://raw.githubusercontent.com/<owner>/pipm/main/scripts/install.sh | sh
+```
+
+Environment variables: `PIPM_VERSION` (default: latest release), `PIPM_INSTALL` (install dir),
+`PIPM_REPO` (owner/repo to download from).
+
+## Requirements
+
+- [Bun](https://bun.sh) ≥ 1.2 to build from source.
+- At **build time** (authoring a registry), `git`, `tar`, and `npm` must be on PATH when a registry
+  vendors git sources or `bundle`-mode npm plugins. Static-only registries need none of these.
+- At **install time**, nothing extra is required — installs are pure file copies.
+
+## Build from source
+
+```bash
+git clone <your pipm repo>
+cd pipm
+bun install
+bun run build            # → dist/index.js
+```
+
+Run it directly:
+
+```bash
+bun run dist/index.js --help
+# or during development
+bun run dev -- --help
+```
+
+## Standalone binary
+
+pipm compiles to a single self-contained binary (Bun runtime embedded — no `node`/`bun` needed at
+runtime):
+
+```bash
+bun run build:binary                       # current platform → dist/bin/pipm-<platform>
+bun run scripts/build-binary.ts --target=linux-arm64
+bun run scripts/build-binary.ts --target=darwin-arm64
+bun run scripts/build-binary.ts --all      # every supported target
+```
+
+Supported targets: `darwin-arm64`, `darwin-x64`, `linux-arm64`, `linux-x64`, `linux-arm64-musl`,
+`linux-x64-musl`, `windows-x64`.
+
+Put it on your PATH:
+
+```bash
+cp dist/bin/pipm-darwin-arm64 /usr/local/bin/pipm
+pipm --version
+```
+
+## In a container
+
+Any base image with Pi installed can carry the pipm binary:
+
+```dockerfile
+FROM node:24-bookworm-slim
+RUN npm install -g --ignore-scripts @earendil-works/pi-coding-agent
+COPY pipm-linux-arm64 /usr/local/bin/pipm
+```
+
+## Next steps
+
+- [Quick Start](/getting-started/quick-start)

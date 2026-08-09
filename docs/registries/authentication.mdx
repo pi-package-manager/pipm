@@ -1,0 +1,126 @@
+---
+title: "Registry Authentication"
+description: "Authenticate pipm to private registries with per-registry Bearer or Basic credentials"
+---
+
+## Overview
+
+pipm authenticates **per registry**. Because one command can pull from several registries at once —
+and dependencies can cross registries — credentials attach to each registry entry rather than being
+passed globally. Both **Bearer** and **HTTP Basic** are supported, with the secret provided as a
+literal, an environment variable, or a file.
+
+Credentials are resolved in precedence order (highest first):
+
+1. **CLI flags** — only for a one-off `--from <url>` registry.
+2. **Per-registry environment variables** — `PIPM_REGISTRY_<ALIAS>_TOKEN` and friends.
+3. **The registry's `auth` block** in `<pi-home>/pipm.jsonc`.
+4. **Raw `headers`** on the registry (with `${ENV}` expansion in trusted scopes).
+
+## Security model
+
+Whether a credential *reference* (env var, file, `${ENV}`) is honored depends on the config scope —
+the same model pnpm uses to stop a checked-out repository from stealing your secrets:
+
+| Scope | File | Literal creds | env/file refs · `${ENV}` | `insecure` |
+|-------|------|---------------|--------------------------|------------|
+| **user** | `<pi-home>/pipm.jsonc` | ✅ | ✅ | ✅ |
+| **local** | committed `./pipm.jsonc` | ✅ | ❌ rejected | ❌ rejected |
+
+> Environment/file references are not resolved from a committed local `pipm.jsonc`. If a repo you
+> clone paired a registry URL with `${CI_TOKEN}`, resolving it would leak your token to that repo's
+> registry. A local config that uses `tokenEnv`/`tokenFile`/`passwordEnv`/`passwordFile`, `${…}` in
+> `headers`, `insecure`, or an alias matching a set `PIPM_REGISTRY_<ALIAS>_*` override fails fast —
+> keep such registries in your `<pi-home>/pipm.jsonc`.
+
+## The `auth` block
+
+### Bearer
+
+```jsonc
+{
+  "registries": {
+    "acme": { "url": "https://reg.acme.com", "auth": { "type": "bearer", "tokenEnv": "ACME_TOKEN" } }
+  }
+}
+```
+
+Provide the token with exactly one of `token` (literal), `tokenEnv`, or `tokenFile`. Produces
+`Authorization: Bearer <token>`.
+
+### Basic
+
+```jsonc
+{
+  "registries": {
+    "acme": { "url": "https://reg.acme.com", "auth": { "type": "basic", "username": "ci", "passwordEnv": "ACME_PASS" } }
+  }
+}
+```
+
+Requires `username` plus exactly one of `password`, `passwordEnv`, or `passwordFile`. Produces
+`Authorization: Basic base64(username:password)`.
+
+### Raw headers
+
+```jsonc
+{ "registries": { "acme": { "url": "https://reg.acme.com", "headers": { "X-Api-Key": "${ACME_KEY}" } } } }
+```
+
+## Environment variable overrides
+
+Set credentials without editing config — ideal for CI. Keyed by the registry alias, uppercased with
+non-alphanumerics replaced by `_` (alias `my-reg` → `MY_REG`):
+
+| Variable | Effect |
+|----------|--------|
+| `PIPM_REGISTRY_<ALIAS>_TOKEN` | Bearer token |
+| `PIPM_REGISTRY_<ALIAS>_TOKEN_FILE` | File containing a Bearer token |
+| `PIPM_REGISTRY_<ALIAS>_BASIC` | `username:password` for Basic auth |
+
+```bash
+PIPM_REGISTRY_ACME_TOKEN=$CI_TOKEN pipm add acme/deploy-bot
+```
+
+An env override takes precedence over the registry's `auth` block.
+
+## Persisting via `pipm registry add`
+
+`pipm registry add` writes the credential into the registry's `auth` block for you, and uses it to
+authenticate the validation request — so adding a private registry works in one step.
+
+```bash
+# basic, literal
+pipm registry add https://reg.acme.com --name acme --username ci --password s3cret
+
+# bearer, stored as an env reference (secret stays out of pipm.jsonc)
+pipm registry add https://reg.acme.com --name acme --token-env ACME_TOKEN
+```
+
+## One-off registries (`--from`)
+
+Pass credentials with flags when installing from an unconfigured registry:
+
+```bash
+pipm install acme/deploy-bot --from https://reg.acme.com --token-env ACME_TOKEN
+```
+
+## TLS
+
+HTTPS certificates are verified by default. Use `--insecure-skip-tls-verify` for a self-signed
+registry, or persist it with `pipm registry add … --insecure-skip-tls-verify` (stored as
+`"insecure": true`, allowed in any scope — it is not a secret).
+
+## Worked example (Docker)
+
+A tiny bearer-protected server (`Authorization: Bearer s3cr3t`) demonstrates the whole flow:
+
+```bash
+# without the token → 401
+pipm registry add http://reg:8080 --name remote
+# ✗ Request failed (401 Unauthorized) for http://reg:8080/index.json
+
+# with the token → added, then install fetches every file with the header
+pipm registry add http://reg:8080 --name remote --token s3cr3t
+pipm install remote/demo
+```

@@ -1,0 +1,45 @@
+---
+title: "CLI Overview"
+description: "Global options and the full pipm command set"
+---
+
+## Global options
+
+These apply to every command:
+
+| Option | Description |
+|--------|-------------|
+| `--pi-home <path>` | Pi home to install into. Precedence: flag → `PI_HOME` env → `~/.config/pipm/config.jsonc` `piHome` → `~/.pi`. Everything installs into `<pi-home>/agent`. |
+| `--json` | Machine-readable JSON output. |
+| `--dry-run` | Compute changes without writing. |
+| `-q, --quiet` | Suppress non-error logs. |
+| `-v, --verbose` | Verbose logging. |
+| `-V, --version` | Print the pipm version. |
+
+## Commands
+
+| Command | Purpose |
+|---------|---------|
+| `pipm init` | Create the Pi home skeleton (`<pi-home>/agent`) and a `pipm.jsonc`. |
+| `pipm init registry <path>` | Scaffold a new registry project at `<path>` (offline). |
+| `pipm registry add <url> --name <alias>` | Add a registry (HTTP URL, `file://`, or local folder), with optional auth. |
+| `pipm registry remove <alias>` | Remove a configured registry. |
+| `pipm registry list` | List configured registries. |
+| `pipm build [path]` | Build an immutable `registry/` folder from `registry.jsonc` (vendors npm/git/static). |
+| `pipm install <alias>/<profile>` | Install a profile into `<pi-home>/agent`, resolving all dependencies. |
+| `pipm add <alias>/<component>` | Add one component into `<pi-home>/agent`, resolving dependencies. |
+| `pipm remove <components...>` | Remove installed components and reverse their `settings.json` additions. |
+| `pipm verify [components...]` | Verify installed files against the receipt (SHA-256). |
+| `pipm list` | List components installed in `<pi-home>/agent`. |
+| `pipm search [query]` | Search components across configured registries. |
+
+## Configuration files
+
+- `<pi-home>/pipm.jsonc` — the registries you've added and their auth. Self-describing per Pi home.
+- `~/.config/pipm/config.jsonc` — optional machine config; only relocates the Pi home (`piHome`).
+- `<pi-home>/agent/.pipm/receipt.jsonc` — the install receipt (per-component, per-file SHA-256).
+
+## See also
+
+- [init](/cli/init) · [registry](/cli/registry) · [build](/cli/build) · [install](/cli/install)
+- [Registry authentication](/registries/authentication)

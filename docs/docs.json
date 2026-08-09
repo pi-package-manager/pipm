@@ -1,0 +1,45 @@
+{
+	"$schema": "https://mintlify.com/docs.json",
+	"theme": "mint",
+	"name": "pipm Documentation",
+	"colors": {
+		"primary": "#5B57D1",
+		"light": "#8B87F0",
+		"dark": "#5B57D1"
+	},
+	"favicon": "/favicon.svg",
+	"navigation": {
+		"anchors": [
+			{
+				"anchor": "Documentation",
+				"icon": "book-open",
+				"groups": [
+					{
+						"group": "Getting Started",
+						"pages": [
+							"getting-started/introduction",
+							"getting-started/installation",
+							"getting-started/quick-start"
+						]
+					},
+					{
+						"group": "Concepts",
+						"pages": ["concepts/overview", "concepts/sources", "concepts/profiles"]
+					},
+					{
+						"group": "CLI",
+						"pages": ["cli/commands", "cli/init", "cli/registry", "cli/build", "cli/install"]
+					},
+					{
+						"group": "Registries",
+						"pages": ["registries/create", "registries/protocol", "registries/authentication"]
+					},
+					{
+						"group": "Reference",
+						"pages": ["reference/components", "security/verification"]
+					}
+				]
+			}
+		]
+	}
+}

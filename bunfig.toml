@@ -1,0 +1,3 @@
+[install]
+# use the public npm registry for build-time vendoring + dev installs
+registry = "https://registry.npmjs.org"
