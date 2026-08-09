@@ -73,9 +73,15 @@ resolve_version() {
     else
         info "Fetching latest version..."
         VERSION=$(curl --fail --silent --location \
-            "https://api.github.com/repos/$REPO/releases/latest" | \
+            "https://api.github.com/repos/$REPO/releases/latest" 2>/dev/null | \
             grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-        [ -z "$VERSION" ] && error "Could not determine latest version. Set PIPM_VERSION or check your connection."
+        # /releases/latest excludes prereleases/drafts — fall back to the newest release of any kind
+        if [ -z "$VERSION" ]; then
+            VERSION=$(curl --fail --silent --location \
+                "https://api.github.com/repos/$REPO/releases?per_page=1" 2>/dev/null | \
+                grep '"tag_name":' | head -1 | sed -E 's/.*"([^"]+)".*/\1/')
+        fi
+        [ -z "$VERSION" ] && error "No published release found for $REPO. Publish one (git tag vX.Y.Z && git push --tags), or set PIPM_VERSION."
         info "Latest version: $VERSION"
     fi
 }

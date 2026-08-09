@@ -11,6 +11,7 @@
  *   --no-binaries     skip binary builds (bundle only)
  *   --no-git          don't commit/tag (default: tag when inside a git repo)
  *   --publish         create a GitHub Release and upload the built assets
+ *   --prerelease      mark the GitHub Release as a prerelease
  *   --dry-run         print the plan; write nothing
  *
  * Publishing reads a token + repo from the environment (.env is auto-loaded by
@@ -41,6 +42,7 @@ const dryRun = flag("dry-run")
 const doBinaries = !flag("no-binaries")
 const doGit = !flag("no-git")
 const doPublish = flag("publish")
+const doPrerelease = flag("prerelease")
 
 function die(msg: string): never {
 	console.error(`✗ ${msg}`)
@@ -154,13 +156,11 @@ async function publishGitHub(assets: string[], notes: string): Promise<void> {
 		"X-GitHub-Api-Version": "2022-11-28",
 		"User-Agent": "pipm-release",
 	}
-	const prerelease = version.startsWith("0.")
-
 	// create (or reuse) the release
 	let rel = await fetch(`${api}/repos/${repo}/releases`, {
 		method: "POST",
 		headers: { ...headers, "Content-Type": "application/json" },
-		body: JSON.stringify({ tag_name: tag, name: tag, body: notes, prerelease }),
+		body: JSON.stringify({ tag_name: tag, name: tag, body: notes, prerelease: doPrerelease }),
 	})
 	if (rel.status === 422) {
 		console.log("  release exists — reusing")
