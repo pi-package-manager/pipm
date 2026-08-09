@@ -140,6 +140,8 @@ blockquote{border-left:3px solid var(--accent);margin:16px 0;padding:4px 16px;co
 mkdirSync(OUT, { recursive: true })
 if (existsSync(join(DOCS, "favicon.svg")))
 	cpSync(join(DOCS, "favicon.svg"), join(OUT, "favicon.svg"))
+// Serve as-is on GitHub Pages (no Jekyll processing)
+writeFileSync(join(OUT, ".nojekyll"), "")
 
 let count = 0
 for (const page of allPages) {

@@ -138,6 +138,10 @@ docs and rewritten for pipm). They publish two ways:
 - **Static HTML** — `bun run docs:build` renders every page to `docs/dist/**.html` (self-contained,
   with a sidebar and light/dark styling). Serve that folder anywhere.
 
+On every release (and every push to `main`), `.github/workflows/pages.yml` builds the HTML and
+deploys it to GitHub Pages: **https://pi-package-manager.github.io/pipm/**. (One-time: enable
+Settings → Pages → Source = "GitHub Actions".)
+
 ## Testing
 
 ```bash
