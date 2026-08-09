@@ -54,7 +54,7 @@ cat > /tmp/my-registry/registry.jsonc <<'EOF'
       "type": "plugin",
       "description": "Run subagents in Pi",
       "vendorDeps": "bundle",
-      "source": { "type": "npm", "package": "pi-subagents", "version": "0.44.0" }
+      "source": { "type": "npm", "package": "pi-subagents", "version": "latest" }
     },
     {
       "name": "all",
@@ -86,8 +86,10 @@ Installed by pipm. Bundles the hello skill and the pi-subagents plugin.
 EOF
 ```
 
-> Pin the plugin to a specific version (`"version": "0.44.0"`). pipm records the exact version + a
-> per-file SHA-256 in the lockfile, so you always control which version installs, and when.
+> The `version` field takes an exact version (`"0.44.0"`), a semver range (`"^0.44.0"`), or an npm
+> dist-tag (`"latest"`, `"next"`, …). Whatever you use, `pipm build` resolves it to one concrete
+> version and records that version + a per-file SHA-256 in `pipm-lock.json` — so the source stays
+> low-maintenance while every build is reproducible, and you control which version ships, and when.
 
 ### 3. Build the registry
 

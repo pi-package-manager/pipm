@@ -69,9 +69,14 @@ async function fetchPackument(pkg: string): Promise<NpmPackument> {
 
 function pickVersion(packument: NpmPackument, range?: string): NpmVersionMeta {
 	const all = Object.keys(packument.versions)
+	const distTags = packument["dist-tags"] ?? {}
+	const tagged = range ? distTags[range] : undefined
 	let chosen: string | null
 	if (!range) {
-		chosen = packument["dist-tags"]?.latest ?? semver.maxSatisfying(all, "*")
+		chosen = distTags.latest ?? semver.maxSatisfying(all, "*")
+	} else if (tagged) {
+		// an npm dist-tag ("latest", "next", …) → resolve to its concrete version
+		chosen = tagged
 	} else if (semver.valid(range)) {
 		chosen = range
 	} else {

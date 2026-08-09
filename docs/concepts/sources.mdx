@@ -13,7 +13,7 @@ accepted (`"npm:pkg@1.2.3"`, or a bare git URL).
   "source": {
     "type": "npm",
     "package": "@acme/routines",
-    "version": "^1.4.0",        // optional range; build pins the exact version
+    "version": "^1.4.0",        // exact ("1.4.2"), semver range ("^1.4.0"), or dist-tag ("latest"); build pins the resolved version
     "subpath": "skills/routines", // optional dir/file inside the package to vendor
     "include": ["**/*.md"]       // optional glob filter
   }
