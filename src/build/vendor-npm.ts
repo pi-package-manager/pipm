@@ -27,6 +27,7 @@ import {
 } from "../utils/fs"
 import { sriSha512 } from "../utils/hash"
 import { hasCommand, runOrThrow } from "./exec"
+import { assertContained } from "./source-safety"
 import { copyIncluded } from "./vendor-common"
 
 type NpmSource = z.infer<typeof npmSourceSchema>
@@ -140,6 +141,7 @@ export async function vendorNpmSimple(
 	const buf = await downloadAndVerify(meta)
 	const extracted = await extractTarball(buf)
 	try {
+		if (source.subpath) assertContained("/__pkg__", source.subpath, "npm subpath")
 		const srcRoot = source.subpath ? join(extracted, source.subpath) : extracted
 		if (!(await pathExists(srcRoot))) {
 			throw new BuildError(`npm subpath "${source.subpath}" not found in ${source.package}`)

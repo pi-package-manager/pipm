@@ -47,8 +47,10 @@ dependencies are always installed before it.
 - git refs → a 40-character commit SHA.
 - every vendored file → a SHA-256; every component → a Merkle-style `contentHash`.
 
-All of this is recorded in `pipm-lock.json`. Consumers re-check file hashes before copying, so a
-tampered mirror is caught. See [Verification](/security/verification).
+All of this is recorded in `pipm-lock.json`. Consumers re-check file hashes before copying, which
+catches in-transit corruption and files altered without a matching packument edit. Note this does
+**not** by itself defend against a fully compromised registry (hashes are served by the same origin);
+see [Verification](/security/verification) for the threat model and roadmap (signing).
 
 ## Next steps
 

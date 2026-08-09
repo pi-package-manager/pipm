@@ -12,11 +12,11 @@ import { basename, dirname, join, resolve } from "node:path"
 import { CLI_VERSION, DEFAULT_COMPONENT_VERSION } from "../constants"
 import type { LockedComponent, Lockfile } from "../schemas/lockfile"
 import {
-	blockedTargetReason,
 	type ComponentManifest,
 	type ComponentVersion,
 	type ResolvedFile,
 	registrySchema,
+	unsafeTargetReason,
 } from "../schemas/registry"
 import { BuildError } from "../utils/errors"
 import {
@@ -217,9 +217,9 @@ export async function buildRegistry(options: BuildOptions): Promise<BuildResult>
 			const target = targets.get(rel) as string
 			// path-safety: target must be a safe relative path and not protected
 			validatePath("/__profile__", target)
-			const blocked = blockedTargetReason(target)
-			if (blocked && component.type !== "plugin") {
-				throw new BuildError(`component "${component.name}": ${blocked}`)
+			const unsafe = unsafeTargetReason(component.type, target)
+			if (unsafe) {
+				throw new BuildError(`component "${component.name}": ${unsafe}`)
 			}
 			const content = await readBuffer(join(destDir, rel))
 			const sha256 = hashContent(content)

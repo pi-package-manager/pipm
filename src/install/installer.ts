@@ -18,8 +18,8 @@ import {
 	type Receipt,
 	receiptSchema,
 } from "../schemas/config"
-import { blockedTargetReason } from "../schemas/registry"
-import { IntegrityError } from "../utils/errors"
+import { unsafeTargetReason } from "../schemas/registry"
+import { IntegrityError, ValidationError } from "../utils/errors"
 import {
 	ensureDir,
 	existsSync,
@@ -153,9 +153,9 @@ export async function installGraph(
 
 			// path safety
 			const absPath = validatePath(profileRoot, file.target)
-			const blocked = blockedTargetReason(file.target)
-			if (blocked && version.type !== "plugin") {
-				throw new IntegrityError(version.name, "safe target", `blocked: ${blocked}`)
+			const unsafe = unsafeTargetReason(version.type, file.target)
+			if (unsafe) {
+				throw new ValidationError(`Refusing unsafe target from "${version.name}": ${unsafe}`)
 			}
 
 			const targetBase = basename(file.target)

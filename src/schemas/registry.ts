@@ -214,6 +214,25 @@ export function blockedTargetReason(target: string): string | null {
 	return null
 }
 
+/**
+ * Full target-safety check applied at BOTH build and install time, against the
+ * (untrusted) packument targets. Every kind is subject to the protected-path
+ * list; plugins are additionally restricted to the `npm/` prefix — the only
+ * place a vendored plugin ever writes — so a malicious registry cannot use a
+ * `type: "plugin"` component to plant files elsewhere in the agent dir.
+ */
+export function unsafeTargetReason(kind: ComponentKind, target: string): string | null {
+	const blocked = blockedTargetReason(target)
+	if (blocked) return blocked
+	if (kind === "plugin") {
+		const norm = target.replace(/\\/g, "/").replace(/^\.\//, "")
+		if (!norm.startsWith("npm/")) {
+			return `plugin target "${target}" must be under npm/`
+		}
+	}
+	return null
+}
+
 /** Resolve a file entry to its { path, target } pair (target defaults to path). */
 export function normalizeFile(file: ComponentFile): { path: string; target: string } {
 	if (typeof file === "string") return { path: file, target: file }

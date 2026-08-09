@@ -16,10 +16,26 @@ pipm makes a registry reproducible and tamper-evident from build to install:
 3. **Lock.** `pipm-lock.json` records the registry name/version, every component's resolved source,
    `contentHash`, and per-file `{sha256, size}`.
 4. **Verify on install.** Before writing any file, the consumer re-hashes the fetched bytes and
-   compares them to the packument's `sha256`. A mismatch aborts with an integrity error — so a
-   compromised HTTP mirror cannot inject altered content.
+   compares them to the packument's `sha256`. A mismatch aborts with an integrity error — this
+   catches in-transit corruption and a mirror that serves altered *files* without also editing the
+   packument, and it detects drift when re-fetching a component you already installed.
 5. **Receipt.** Installed files are recorded in `<pi-home>/agent/.pipm/receipt.jsonc`, keyed by a
    canonical id `registryUrl::alias/name@sha256:<hash>`, with each file's hash.
+
+## Threat model (what hashing does *not* cover)
+
+The per-file hashes and `contentHash` are served by the **same origin** as the files (in the
+packument), and the consumer does not yet pin an out-of-band trust anchor. So integrity verification
+does **not** by itself defend against a **fully compromised registry** — an attacker who controls the
+server can serve a self-consistent (files + hashes + lockfile) set and every check passes. Today the
+registry origin is a trusted party; protect it accordingly:
+
+- Serve over **HTTPS** (verified by default) and use **auth** for private registries.
+- Prefer registries you control or trust; treat a third-party registry like any code dependency.
+
+**Roadmap:** signed registries (e.g. minisign/cosign/PGP) verified against a key pinned at
+`registry add` time, and/or a consumer-pinned `contentHash`, to give an independent trust anchor that
+holds even against a compromised mirror.
 
 ## `pipm verify`
 

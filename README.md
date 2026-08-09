@@ -222,7 +222,11 @@ Private registries: `pipm registry add <url> --name acme --token-env ACME_TOKEN`
 `pipm build` pins every source (npm exact version + `dist.integrity`, git commit
 SHA), verifies npm tarball integrity (SHA-512), hashes every vendored file
 (SHA-256) plus a per-component Merkle `contentHash`, and writes `pipm-lock.json`.
-Consumers re-check file hashes before copying, so a tampered mirror is caught.
+Consumers re-check file hashes before copying — catching in-transit corruption and
+files altered without a matching packument edit. This does **not** by itself defend
+against a fully compromised registry (hashes come from the same origin); use HTTPS +
+auth and trust the origin. Signed registries are on the roadmap — see
+[docs/security/verification](docs/security/verification.mdx).
 
 ## Build
 

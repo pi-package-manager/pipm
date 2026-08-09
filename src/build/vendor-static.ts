@@ -7,6 +7,7 @@ import type { z } from "zod"
 import { normalizeFile, type staticSourceSchema } from "../schemas/registry"
 import { BuildError } from "../utils/errors"
 import { copyPath, pathExists } from "../utils/fs"
+import { assertContained } from "./source-safety"
 
 type StaticSource = z.infer<typeof staticSourceSchema>
 
@@ -25,6 +26,9 @@ export async function vendorStatic(
 		const { path } = normalizeFile(file)
 		const explicitTarget = typeof file === "string" ? undefined : file.target
 		const rel = explicitTarget ?? basename(path)
+		// confine both the source read and the vendored write to their roots
+		assertContained(filesRoot, path, "static file path")
+		assertContained(destDir, rel, "static file target")
 		const abs = join(filesRoot, path)
 		if (!(await pathExists(abs))) {
 			throw new BuildError(`static file not found: files/${path}`)

@@ -16,7 +16,18 @@ import {
 	removePath,
 } from "../utils/fs"
 import { hasCommand, run, runOrThrow } from "./exec"
+import {
+	assertContained,
+	assertSafeGitRef,
+	assertSafeGitRepo,
+	GIT_SAFE_FLAGS,
+} from "./source-safety"
 import { copyIncluded } from "./vendor-common"
+
+/** git invocation with the ext/file transport guards prepended. */
+function git(...args: string[]): string[] {
+	return ["git", ...GIT_SAFE_FLAGS, ...args]
+}
 
 type GitSource = z.infer<typeof gitSourceSchema>
 
@@ -35,22 +46,30 @@ export async function vendorGit(source: GitSource, destDir: string): Promise<Git
 		throw new BuildError("`git` is required to vendor git sources but was not found on PATH.")
 	}
 
+	// harden untrusted inputs before they reach `git`
+	assertSafeGitRepo(source.repo)
+	const ref = source.ref
+	if (ref) assertSafeGitRef(ref)
+	if (source.subpath) assertContained("/__repo__", source.subpath, "git subpath")
+
 	const tmp = await makeTempDir("pipm-git-")
 	try {
-		const ref = source.ref
 		let cloned = false
 		if (ref) {
-			const shallow = await run(["git", "clone", "--depth", "1", "--branch", ref, source.repo, tmp])
+			// `--` terminates options so a repo/ref can never be parsed as a flag
+			const shallow = await run(
+				git("clone", "--depth", "1", "--branch", ref, "--", source.repo, tmp),
+			)
 			cloned = shallow.code === 0
 		}
 		if (!cloned) {
 			// full clone + checkout (handles arbitrary commit SHAs and default branch)
 			await removePath(tmp)
-			await runOrThrow(["git", "clone", source.repo, tmp])
-			if (ref) await runOrThrow(["git", "checkout", ref], { cwd: tmp })
+			await runOrThrow(git("clone", "--", source.repo, tmp))
+			if (ref) await runOrThrow(git("checkout", "--detach", ref), { cwd: tmp })
 		}
 
-		const revParse = await runOrThrow(["git", "rev-parse", "HEAD"], { cwd: tmp })
+		const revParse = await runOrThrow(git("rev-parse", "HEAD"), { cwd: tmp })
 		const commit = revParse.stdout.trim()
 
 		// remove the .git directory so it is never vendored

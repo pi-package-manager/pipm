@@ -5,6 +5,7 @@ import {
 	parseSourceString,
 	piNameSchema,
 	registrySchema,
+	unsafeTargetReason,
 } from "../src/schemas/registry"
 
 describe("source string parsing", () => {
@@ -48,6 +49,26 @@ describe("blockedTargetReason", () => {
 	it("allows normal targets", () => {
 		expect(blockedTargetReason("skills/x/SKILL.md")).toBeNull()
 		expect(blockedTargetReason("npm/node_modules/x/index.js")).toBeNull()
+	})
+})
+
+describe("unsafeTargetReason", () => {
+	it("blocks protected paths for every kind (incl. plugin)", () => {
+		expect(unsafeTargetReason("skill", "memory/x.md")).not.toBeNull()
+		expect(unsafeTargetReason("plugin", "memory/pwned.md")).not.toBeNull()
+		expect(unsafeTargetReason("plugin", "sessions/x")).not.toBeNull()
+		expect(unsafeTargetReason("plugin", "npm/package.json")).not.toBeNull()
+		expect(unsafeTargetReason("profile", "settings.json")).not.toBeNull()
+	})
+	it("restricts plugins to the npm/ prefix", () => {
+		expect(unsafeTargetReason("plugin", "npm/node_modules/x/index.js")).toBeNull()
+		expect(unsafeTargetReason("plugin", "skills/x/SKILL.md")).not.toBeNull()
+		expect(unsafeTargetReason("plugin", "extensions/x.ts")).not.toBeNull()
+	})
+	it("allows normal per-kind targets", () => {
+		expect(unsafeTargetReason("skill", "skills/x/SKILL.md")).toBeNull()
+		expect(unsafeTargetReason("extension", "extensions/x.ts")).toBeNull()
+		expect(unsafeTargetReason("profile", "AGENTS.md")).toBeNull()
 	})
 })
 
