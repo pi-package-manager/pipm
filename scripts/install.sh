@@ -3,17 +3,17 @@
 # Downloads a prebuilt binary from GitHub Releases and installs it as `pipm`.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/<owner>/pipm/main/scripts/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/pi-package-manager/pipm/main/scripts/install.sh | sh
 #
 # Environment variables:
 #   PIPM_VERSION  - version tag to install, e.g. v0.0.1 (default: latest release)
 #   PIPM_INSTALL  - install directory (default: /usr/local/bin, else ~/.local/bin)
-#   PIPM_REPO     - GitHub owner/repo to download from (default: jsuchy/pipm)
+#   PIPM_REPO     - GitHub owner/repo to download from (default: pi-package-manager/pipm)
 #   CI            - set to skip interactive niceties
 
 set -e
 
-REPO="${PIPM_REPO:-jsuchy/pipm}"
+REPO="${PIPM_REPO:-pi-package-manager/pipm}"
 GITHUB_URL="https://github.com/$REPO"
 
 # ── colour output (TTY-aware) ────────────────────────────────────────────────

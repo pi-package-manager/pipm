@@ -10,11 +10,11 @@ Once a release is published to GitHub, install with one command — it detects y
 verifies it against the release's `SHA256SUMS`, and installs to `/usr/local/bin` (or `~/.local/bin`):
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<owner>/pipm/main/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/pi-package-manager/pipm/main/scripts/install.sh | sh
 
 # pin a version or install dir:
 PIPM_VERSION=v0.0.1 PIPM_INSTALL=~/.local/bin \
-  curl -fsSL https://raw.githubusercontent.com/<owner>/pipm/main/scripts/install.sh | sh
+  curl -fsSL https://raw.githubusercontent.com/pi-package-manager/pipm/main/scripts/install.sh | sh
 ```
 
 Environment variables: `PIPM_VERSION` (default: latest release), `PIPM_INSTALL` (install dir),

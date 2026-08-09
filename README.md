@@ -16,7 +16,7 @@ dependency resolution, path-safety, and the CLI structure are forked from OCX
 Once a release is published, install the prebuilt binary from GitHub Releases:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<owner>/pipm/main/scripts/install.sh | sh
+curl -fsSL https://raw.githubusercontent.com/pi-package-manager/pipm/main/scripts/install.sh | sh
 # pin a version / dir:
 PIPM_VERSION=v0.0.1 PIPM_INSTALL=~/.local/bin curl -fsSL .../install.sh | sh
 ```
